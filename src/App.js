@@ -7,7 +7,7 @@ import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Paper from "@material-ui/core/Paper";
 import IconButton from "@material-ui/core/IconButton";
-import {Button} from "@material-ui/core";
+import { Button, ListItem, ListItemText } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 
 import { makeStyles } from "@material-ui/core/styles";
@@ -56,27 +56,30 @@ const useStyles = makeStyles((theme) => ({
 
 function App() {
   const classes = useStyles();
-  let firthArray = projects.map((item, i) =>
-    Object.assign({}, item, devices[i])
-  );
-
-  let newArray = firthArray.map((item, i) => Object.assign({}, item, users[i]));
-  const [currentProjects, setCurrentProjects] = useState(newArray);
+  const [currentProjects, setCurrentProjects] = useState(projects);
+  const [currentDevices, setCurrentDevices] = useState(devices);
+  const [currentUsers, setCurrentUsers] = useState(users);
   const [openModalWindow, setOpenModalWindow] = useState(false);
+  const [modalData, setModalData] = useState({
+    id: "",
+    projectName: "",
+    devices: [],
+    users: [],
+  });
 
   const deleteProject = (itemId) => {
     setCurrentProjects(currentProjects.filter(({ id }) => id !== itemId));
   };
 
   const handleOpen = (item) => {
+    let projectDevices = currentDevices.filter((i) => i.projectId === item.id);
+    let projectUsers = currentUsers.filter((i) => i.projectId === item.id);
+
     setModalData({
       id: item.id,
       projectName: item.title,
-      device: item.serialNumber,
-      userName: {
-        firthName: item.firstName,
-        lastName: item.lastName,
-      },
+      devices: projectDevices,
+      users: projectUsers,
     });
     setOpenModalWindow(true);
   };
@@ -92,19 +95,14 @@ function App() {
     });
   };
 
-  const saveUpdatedData = (id) => {
+  const saveUpdatedData = (id, devices, users) => {
     const newState = [...currentProjects];
-    newState.find(i => i.id === id).title = modalData.projectName
-    newState.find(i => i.id === id).serialNumber = modalData.device
+    newState.find((i) => i.id === id).title = modalData.projectName;
     setCurrentProjects(newState);
+    setCurrentDevices(devices);
+    setCurrentUsers(users);
     handleClose();
   };
-
-  const [modalData, setModalData] = useState({
-    id: "",
-    projectName: "",
-    device: "",
-  });
 
   return (
     <div className="App">
@@ -125,12 +123,38 @@ function App() {
             {currentProjects.map((item, idx) => (
               <TableRow key={idx}>
                 <TableCell component="th" scope="row">
-                  {item.title}
+                  <ListItem>{item.title}</ListItem>
                 </TableCell>
-
-                <TableCell align="right">{item.serialNumber}</TableCell>
-
-                <TableCell align="right">{`${item.firstName} ${item.lastName}`}</TableCell>
+                <TableCell align="right">
+                  {currentDevices
+                    .filter((i) => i.projectId === item.id)
+                    .map((device, idx) => (
+                      <ListItem
+                        key={idx}
+                        href="#simple-list"
+                        button
+                        component="a"
+                      >
+                        <ListItemText primary={device.serialNumber} />
+                      </ListItem>
+                    ))}
+                </TableCell>
+                <TableCell align="right">
+                  {currentUsers
+                    .filter((i) => i.projectId === item.id)
+                    .map((user, idx) => (
+                      <ListItem
+                        key={idx}
+                        href="#simple-list"
+                        button
+                        component="a"
+                      >
+                        <ListItemText
+                          primary={`${user.firstName} ${user.lastName}`}
+                        />
+                      </ListItem>
+                    ))}
+                </TableCell>
                 <TableCell align="right">
                   {new Date(item.beginDate).toLocaleDateString()} -{" "}
                   {new Date(item.expirationDate).toLocaleDateString()}
@@ -153,13 +177,15 @@ function App() {
           </TableBody>
         </Table>
       </TableContainer>
-      <ModalWindow 
-        modalData={modalData}
-        handleChange={handleChange}
-        handleClose={handleClose}
-        saveUpdatedData={saveUpdatedData}
-        openModalWindow={openModalWindow}
-      />
+      {openModalWindow && (
+        <ModalWindow
+          modalData={modalData}
+          handleChange={handleChange}
+          handleClose={handleClose}
+          saveUpdatedData={saveUpdatedData}
+          openModalWindow={openModalWindow}
+        />
+      )}
     </div>
   );
 }

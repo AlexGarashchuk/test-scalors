@@ -1,12 +1,30 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Backdrop from "@material-ui/core/Backdrop";
 
-import { Modal, Button, TextField, FormControl } from "@material-ui/core";
+import {
+  Modal,
+  Button,
+  TextField,
+  FormControl,
+  Chip,
+  Paper,
+} from "@material-ui/core";
 
 import { makeStyles } from "@material-ui/core/styles";
 import "./App.css";
 
 const useStyles = makeStyles((theme) => ({
+  root: {
+    display: "flex",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    listStyle: "none",
+    padding: theme.spacing(0.5),
+    margin: "10px 0",
+  },
+  chip: {
+    margin: theme.spacing(0.5),
+  },
   modal: {
     display: "flex",
     alignItems: "center",
@@ -40,7 +58,39 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function ModalWindow(props) {
+  const {
+    modalData,
+    saveUpdatedData,
+    openModalWindow,
+    handleClose,
+    handleChange,
+  } = props;
   const classes = useStyles();
+  const [chipDataDevices, setChipDataDevises] = React.useState([]);
+  const [chipDataUsers, setChipDataUsers] = React.useState([]);
+
+  useEffect(() => {
+    setChipDataDevises(modalData.devices);
+    setChipDataUsers(modalData.users);
+  }, [modalData.devices, modalData.users]);
+
+  const handleDeleteDevices = (chipToDelete) => () => {
+    setChipDataDevises(
+      chipDataDevices.filter(
+        (chip) => chip.serialNumber !== chipToDelete.serialNumber
+      )
+    );
+  };
+
+  const handleDeleteUsers = (chipToDelete) => () => {
+    setChipDataUsers(
+      chipDataUsers.filter((chip) => chip.firstName !== chipToDelete.firstName)
+    );
+  };
+
+  const saveUpdatedCurrentData = () => {
+    saveUpdatedData(modalData.id, chipDataDevices, chipDataUsers);
+  };
 
   return (
     <div>
@@ -48,8 +98,8 @@ function ModalWindow(props) {
         aria-labelledby="spring-modal-title"
         aria-describedby="spring-modal-description"
         className={classes.modal}
-        open={props.openModalWindow}
-        onClose={props.handleClose}
+        open={openModalWindow}
+        onClose={handleClose}
         closeAfterTransition
         BackdropComponent={Backdrop}
         BackdropProps={{
@@ -63,28 +113,56 @@ function ModalWindow(props) {
               id="standard-basic"
               label="Project Name"
               variant="outlined"
-              value={props.modalData.projectName}
+              value={modalData.projectName}
               name="projectName"
-              onChange={props.handleChange}
+              onChange={handleChange}
             />
-            <TextField
-              id="standard-basic"
-              label="Device"
-              variant="outlined"
-              name="device"
-              value={props.modalData.device}
-              onChange={props.handleChange}
-            />
+            {chipDataDevices.length > 0 && (
+              <Paper component="ul" className={classes.root}>
+                {chipDataDevices &&
+                  chipDataDevices.map((i, idx) => (
+                    <li key={idx}>
+                      <Chip
+                        label={i.serialNumber}
+                        onDelete={
+                          modalData.label === "React"
+                            ? undefined
+                            : handleDeleteDevices(i)
+                        }
+                        className={classes.chip}
+                      />
+                    </li>
+                  ))}
+              </Paper>
+            )}
+            {chipDataUsers.length > 0 && (
+              <Paper component="ul" className={classes.root}>
+                {chipDataUsers &&
+                  chipDataUsers.map((i, idx) => (
+                    <li key={idx}>
+                      <Chip
+                        label={`${i.firstName} ${i.lastName}`}
+                        onDelete={
+                          modalData.label === "React"
+                            ? undefined
+                            : handleDeleteUsers(i)
+                        }
+                        className={classes.chip}
+                      />
+                    </li>
+                  ))}
+              </Paper>
+            )}
           </FormControl>
 
           <div className={classes.btnWrp}>
-            <Button variant="contained" color="secondary" onClick={props.handleClose}>
+            <Button variant="contained" color="secondary" onClick={handleClose}>
               Cancel
             </Button>
             <Button
               variant="contained"
               color="primary"
-              onClick={() => props.saveUpdatedData(props.modalData.id)}
+              onClick={saveUpdatedCurrentData}
             >
               Save
             </Button>
